@@ -196,6 +196,10 @@ export default function NewScreeningPage() {
       const score = calcScore(newAnswers);
       const risk = getRisk(score);
       setSaving(true);
+
+      // Start AI summary immediately in parallel — don't wait for Firestore
+      fetchAiSummary(childInfo.name, childInfo.dob, score, risk, newAnswers);
+
       try {
         if (user) {
           const id = await saveScreening(user.uid, {
@@ -215,7 +219,6 @@ export default function NewScreeningPage() {
       } finally {
         setSaving(false);
         setStep('result');
-        fetchAiSummary(childInfo.name, childInfo.dob, score, risk, newAnswers);
       }
     }
   };
@@ -473,9 +476,12 @@ export default function NewScreeningPage() {
                   <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">AI-Generated Summary</p>
                 </div>
                 {summaryLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                    <p className="text-sm text-blue-500">Generating personalised summary...</p>
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
+                    <div>
+                      <p className="text-sm text-blue-700 font-semibold">Generating personalised summary...</p>
+                      <p className="text-xs text-blue-400 mt-0.5">Our AI is analysing your responses</p>
+                    </div>
                   </div>
                 ) : aiSummary ? (
                   <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
