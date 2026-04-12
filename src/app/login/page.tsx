@@ -39,8 +39,14 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       router.push('/dashboard');
-    } catch {
-      setError('Google sign-in failed. Please try again.');
+    } catch (err: any) {
+      console.error('Google sign-in error:', err);
+      if (err?.code === 'auth/popup-closed-by-user') return;
+      if (err?.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorised. Please contact support.');
+      } else {
+        setError(`Google sign-in failed: ${err?.code ?? err?.message ?? 'unknown error'}`);
+      }
     }
   };
 
