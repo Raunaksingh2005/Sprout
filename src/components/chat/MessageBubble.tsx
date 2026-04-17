@@ -12,6 +12,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+import { useRouter } from 'next/navigation';
+
 interface MessageBubbleProps {
   message: ChatMessage;
   isUser: boolean;
@@ -20,6 +22,15 @@ interface MessageBubbleProps {
 export function MessageBubble({ message, isUser }: MessageBubbleProps) {
   const isAssistant = message.role === 'assistant';
   const isSystem = message.role === 'system';
+  const router = useRouter();
+
+  const handleAction = (actionStr: string) => {
+    if (actionStr.startsWith('/')) {
+      router.push(actionStr);
+    } else {
+      console.log('Action triggered:', actionStr);
+    }
+  };
   
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
