@@ -74,7 +74,7 @@ export function ChatContainer() {
             </div>
           ) : (
             messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble key={message.id} message={message} isUser={message.role === 'user'} />
             ))
           )}
           
