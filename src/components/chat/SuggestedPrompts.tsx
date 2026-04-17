@@ -1,7 +1,7 @@
 'use client';
 
 interface SuggestedPromptsProps {
-  prompts: string[];
+  prompts: readonly string[];
   onSelect: (prompt: string) => void;
   title?: string;
 }
