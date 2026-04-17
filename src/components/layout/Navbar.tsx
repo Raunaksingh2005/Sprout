@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LayoutDashboard, MessageSquare, FileText, LogOut, ChevronDown, Menu, X, Sprout } from 'lucide-react';
 import VerifyEmailBanner from '@/components/VerifyEmailBanner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,18 +43,18 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
+      <nav className="border-b border-gray-200 bg-white/90 backdrop-blur-xl shadow-sm sticky top-0 z-50">
+      <div className="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2 group">
-          <div className="w-7 h-7 bg-blue-700 rounded-lg flex items-center justify-center shadow-sm group-hover:bg-blue-900 transition-colors">
-            <Sprout className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 bg-brand-900 rounded-lg flex items-center justify-center shadow-sm group-hover:bg-brand-700 transition-colors">
+            <Sprout className="w-5 h-5 text-brand-50" />
           </div>
-          <span className="font-bold text-gray-900 text-base tracking-tight">sprout</span>
+          <span className="font-extrabold text-gray-900 text-lg tracking-tight">sprout</span>
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-1.5">
           {navLinks.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
@@ -83,21 +84,32 @@ export default function Navbar() {
               <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {profileOpen && (
-              <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1 animate-fade-in">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{user?.displayName || 'User'}</p>
-                  <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-                </div>
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+            {/* Dropdown */}
+            <AnimatePresence>
+              {profileOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  className="absolute right-0 mt-2 w-56 bg-white/90 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-premium py-1 overflow-hidden"
                 >
-                  <LogOut className="w-4 h-4" />
-                  Sign out
-                </button>
-              </div>
-            )}
+                  <div className="px-4 py-3 border-b border-gray-100/50 bg-gray-50/50">
+                    <p className="text-sm font-bold text-gray-900 truncate">{user?.displayName || 'User'}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                  </div>
+                  <div className="p-1">
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-semibold rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign out
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <button

@@ -15,14 +15,14 @@
 
   body {
     background-color: #fafafa;
-    color: #111111;
+    color: #0f172a;
     font-family: var(--font-inter), 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
   ::selection {
-    background: #111;
-    color: #fff;
+    background: rgba(37, 99, 235, 0.2);
+    color: #1d4ed8;
   }
 
   ::-webkit-scrollbar { width: 3px; }

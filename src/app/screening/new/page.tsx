@@ -14,6 +14,7 @@ import { authFetch } from '@/lib/authFetch';
 import { dobToMonths } from '@/lib/firebase/screenings';
 import { invalidateCache } from '@/lib/screeningCache';
 import { ArrowLeft, ArrowRight, CheckCircle, Loader2, Download, Sparkles, Brain, Zap, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Step = 'select' | 'info' | 'questions' | 'result';
 type Risk = 'Low' | 'Medium' | 'High';
@@ -190,37 +191,40 @@ export default function NewScreeningPage() {
     const newAnswers = { ...answers, [qId]: value };
     setAnswers(newAnswers);
 
-    if (currentQ < totalQ - 1) {
-      setCurrentQ(prev => prev + 1);
-    } else {
-      const score = calcScore(newAnswers);
-      const risk = getRisk(score);
-      setSaving(true);
+    // Wait 350ms before proceeding so user can see their selection
+    setTimeout(async () => {
+      if (currentQ < totalQ - 1) {
+        setCurrentQ(prev => prev + 1);
+      } else {
+        const score = calcScore(newAnswers);
+        const risk = getRisk(score);
+        setSaving(true);
 
-      // Start AI summary immediately in parallel — don't wait for Firestore
-      fetchAiSummary(childInfo.name, childInfo.dob, score, risk, newAnswers);
+        // Start AI summary immediately in parallel — don't wait for Firestore
+        fetchAiSummary(childInfo.name, childInfo.dob, score, risk, newAnswers);
 
-      try {
-        if (user) {
-          const id = await saveScreening(user.uid, {
-            childName: childInfo.name,
-            childAge: dobToMonths(childInfo.dob),
-            childGender: childInfo.gender,
-            screeningType,
-            answers: newAnswers,
-            score,
-            risk,
-          });
-          setSavedId(id);
-          invalidateCache(user.uid);
+        try {
+          if (user) {
+            const id = await saveScreening(user.uid, {
+              childName: childInfo.name,
+              childAge: dobToMonths(childInfo.dob),
+              childGender: childInfo.gender,
+              screeningType,
+              answers: newAnswers,
+              score,
+              risk,
+            });
+            setSavedId(id);
+            invalidateCache(user.uid);
+          }
+        } catch (e) {
+          console.error('Failed to save:', e);
+        } finally {
+          setSaving(false);
+          setStep('result');
         }
-      } catch (e) {
-        console.error('Failed to save:', e);
-      } finally {
-        setSaving(false);
-        setStep('result');
       }
-    }
+    }, 350);
   };
 
   const handleDownload = () => {
@@ -252,13 +256,19 @@ export default function NewScreeningPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
         <Navbar />
-        <main className="max-w-xl mx-auto px-5 py-8">
-
+        <main className="max-w-xl mx-auto px-5 py-8 overflow-hidden">
+          <AnimatePresence mode="wait">
           {/* ── Select screening type ── */}
           {step === 'select' && (
-            <div className="animate-fade-up">
+            <motion.div 
+              key="select"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+            >
               <p className="text-xs font-mono text-gray-400 mb-1">screening / new</p>
               <h1 className="text-2xl font-extrabold text-gray-900 mb-1">Choose screening type</h1>
               <p className="text-sm text-gray-500 mb-8">Select the area you'd like to screen for.</p>
@@ -292,12 +302,18 @@ export default function NewScreeningPage() {
               >
                 Continue <ArrowRight className="w-4 h-4" />
               </button>
-            </div>
+            </motion.div>
           )}
 
           {/* ── Info step ── */}
           {step === 'info' && (
-            <div className="animate-fade-up">
+            <motion.div 
+              key="info"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+            >
               <button onClick={() => setStep('select')} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 mb-4 transition-colors">
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
@@ -390,12 +406,18 @@ export default function NewScreeningPage() {
                   Start screening <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* ── Questions step ── */}
           {step === 'questions' && (
-            <div className="animate-fade-up">
+            <motion.div 
+              key={`q-${currentQ}`}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-mono font-bold text-gray-500">{currentQ + 1} / {totalQ}</p>
@@ -426,14 +448,23 @@ export default function NewScreeningPage() {
                     const iconColors = ['text-emerald-600', 'text-amber-500', 'text-red-500'];
                     const iconBgs = ['bg-emerald-50', 'bg-amber-50', 'bg-red-50'];
                     const idx = Math.min(oi, 2);
+                    const isSelected = answers[questions[currentQ].id] === opt.value;
                     return (
                       <button key={opt.value} onClick={() => handleAnswer(opt.value)}
-                        className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-700 text-sm font-semibold hover:border-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all group">
-                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${iconBgs[idx]} ${iconColors[idx]} group-hover:scale-110 transition-transform`}>
+                        className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-sm font-semibold transition-all group ${
+                          isSelected 
+                            ? 'border-blue-600 bg-blue-50 text-blue-800 shadow-md transform scale-[1.02]' 
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50'
+                        }`}>
+                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 transition-transform ${isSelected ? 'scale-110 ' : ''} ${iconBgs[idx]} ${iconColors[idx]}`}>
                           {icons[idx]}
                         </span>
                         <span className="flex-1 text-left">{opt.label}</span>
-                        <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                        {isSelected ? (
+                          <CheckCircle className="w-5 h-5 text-blue-600" />
+                        ) : (
+                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                        )}
                       </button>
                     );
                   })}
@@ -445,12 +476,17 @@ export default function NewScreeningPage() {
                   <ArrowLeft className="w-4 h-4" /> Previous
                 </button>
               )}
-            </div>
+            </motion.div>
           )}
 
           {/* ── Result step ── */}
           {step === 'result' && (
-            <div className="animate-fade-up">
+            <motion.div 
+              key="result"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
               <div className="text-center mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-blue-700" />
@@ -510,8 +546,9 @@ export default function NewScreeningPage() {
                 Screening tool only · Not a medical diagnosis<br />
                 Please consult a qualified healthcare professional.
               </p>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </main>
       </div>
     </AuthGuard>

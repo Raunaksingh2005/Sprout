@@ -12,6 +12,7 @@ import {
   updateProfile,
   sendEmailVerification,
   reload,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 
@@ -24,6 +25,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,8 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, signInWithGoogle, sendVerificationEmail, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, signInWithGoogle, sendVerificationEmail, refreshUser, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

@@ -5,6 +5,7 @@ import AuthGuard from '@/components/AuthGuard';
 import Navbar from '@/components/layout/Navbar';
 import { Send, Bot, User, AlertCircle } from 'lucide-react';
 import { authFetch } from '@/lib/authFetch';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
   id: number;
@@ -84,7 +85,7 @@ export default function ChatPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-[100dvh] bg-gradient-to-b from-blue-50 to-white flex flex-col">
         <Navbar />
 
         <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto px-4 py-5 gap-4">
@@ -105,11 +106,15 @@ export default function ChatPage() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto space-y-4 py-2">
-            {messages.map(msg => (
-              <div
-                key={msg.id}
-                className={`flex gap-2.5 animate-fade-up ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-              >
+            <AnimatePresence initial={false}>
+              {messages.map(msg => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                >
                 <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${
                   msg.role === 'user' ? 'bg-gray-900' : 'bg-indigo-100'
                 }`}>
@@ -130,22 +135,30 @@ export default function ChatPage() {
                     {msg.ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-              </div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
 
             {/* Typing indicator */}
-            {loading && (
-              <div className="flex gap-2.5 animate-fade-up">
-                <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-3.5 h-3.5 text-indigo-600" />
-                </div>
-                <div className="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
-            )}
+            <AnimatePresence>
+              {loading && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex gap-2.5"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-3.5 h-3.5 text-indigo-600" />
+                  </div>
+                  <div className="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Error */}
             {error && (
@@ -160,17 +173,24 @@ export default function ChatPage() {
 
           {/* Suggested prompts — only on first message */}
           {messages.length <= 1 && (
-            <div className="flex flex-wrap gap-2">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.3 }}
+              className="flex flex-wrap gap-2"
+            >
               {SUGGESTED.map((s, i) => (
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   key={i}
                   onClick={() => send(s)}
                   className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors bg-white"
                 >
                   {s}
-                </button>
+                </motion.button>
               ))}
-            </div>
+            </motion.div>
           )}
 
           {/* Input */}
@@ -181,7 +201,7 @@ export default function ChatPage() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
               placeholder="Ask anything about autism, ADHD, dyslexia or development..."
-              className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
+              className="flex-1 bg-transparent text-[16px] sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
               disabled={loading}
             />
             <button

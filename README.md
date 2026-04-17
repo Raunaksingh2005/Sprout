@@ -1,5 +1,7 @@
 # Sprout 🌱
 
+**Live:** [sprout-sooty.vercel.app](https://sprout-sooty.vercel.app)
+
 **Early child development screening for Autism (ASD), ADHD, and Dyslexia — powered by AI.**
 
 Sprout helps parents identify early signs of neurodevelopmental conditions in children using clinically validated questionnaires and AI-generated insights. Results are delivered in under 10 minutes with a downloadable PDF report.

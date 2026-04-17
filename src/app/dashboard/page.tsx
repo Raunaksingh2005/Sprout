@@ -9,6 +9,22 @@ import { ArrowRight, FileText, MessageSquare, Clock, Plus, Loader2, Download, Tr
 import { getScreenings, deleteScreening, formatAge, formatDate, type ScreeningResult, SCREENING_LABELS, SCREENING_COLORS } from '@/lib/firebase/screenings';
 import { generatePDF } from '@/lib/generateReport';
 import { getCached, setCache } from '@/lib/screeningCache';
+import { motion } from 'framer-motion';
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const fadeUpItem = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 const riskStyle = {
   Low: 'text-blue-700 bg-blue-50 border-blue-100',
@@ -131,7 +147,7 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
         <Navbar />
 
         {deleteTarget && (
@@ -144,25 +160,37 @@ export default function DashboardPage() {
         )}
 
         <main className="max-w-5xl mx-auto px-5 py-8">
-          <div className="mb-8 animate-fade-up">
-            <p className="text-xs font-mono font-bold text-blue-700 uppercase tracking-widest mb-1">dashboard</p>
-            <h1 className="text-2xl font-extrabold text-gray-900">Hey, {firstName} 👋</h1>
-            <p className="text-sm text-gray-500 mt-1">Here's your screening overview.</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mb-8"
+          >
+            <p className="text-xs font-mono font-bold text-brand-600 uppercase tracking-widest mb-1">dashboard</p>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Hey, {firstName} 👋
+            </h1>
+            <p className="text-sm text-gray-500 mt-1 font-medium">Here's your screening overview.</p>
+          </motion.div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <motion.div 
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"
+          >
             {[
               { label: 'Total screenings', value: loadingData ? '…' : String(total) },
               { label: 'Children tracked', value: loadingData ? '…' : String(uniqueChildren) },
               { label: 'Avg risk', value: loadingData ? '…' : avgRisk },
               { label: 'Last screening', value: loadingData ? '…' : lastDate },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-                <p className="text-xs text-gray-500 mb-2 font-medium">{label}</p>
-                <p className="text-xl font-extrabold font-mono text-gray-900">{value}</p>
-              </div>
+              <motion.div key={label} variants={fadeUpItem} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-premium transition-colors hover:border-gray-200">
+                <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">{label}</p>
+                <p className="text-2xl font-extrabold font-mono text-gray-900 tracking-tight">{value}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           <div className="grid sm:grid-cols-3 gap-5">
             <div className="sm:col-span-2">
@@ -190,14 +218,21 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {screenings.map(s => (
-                    <div key={s.id} className="flex items-center justify-between p-4 rounded-2xl border border-gray-200 hover:border-blue-100 hover:shadow-sm transition-all group bg-white">
+                  {screenings.map((s, index) => (
+                    <motion.div 
+                      key={s.id} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ y: -2 }}
+                      className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:border-brand-100 shadow-sm transition-all group bg-white"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center font-extrabold text-blue-700 font-mono">
+                        <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center font-bold text-brand-900">
                           {s.childName[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900 text-sm">{s.childName}</p>
+                          <p className="font-bold text-gray-900 text-sm group-hover:text-brand-900 transition-colors">{s.childName}</p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <p className="text-xs text-gray-400">{formatAge(s.childAge)} · {formatDate(s.createdAt)}</p>
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${SCREENING_COLORS[s.screeningType ?? 'autism']}`}>
@@ -210,19 +245,19 @@ export default function DashboardPage() {
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${riskStyle[s.risk]}`}>
                           {s.risk}
                         </span>
-                        <span className="text-xs text-gray-400 font-mono hidden sm:block">{s.score}/20</span>
+                        <span className="text-xs text-gray-400 font-mono hidden sm:block mx-2">{s.score}/20</span>
                         <button onClick={() => handleDownload(s)} disabled={downloadingId === s.id}
                           title="Download PDF"
-                          className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-300 hover:text-blue-700 transition-colors disabled:opacity-50">
+                          className="p-2 rounded-xl text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors disabled:opacity-50">
                           {downloadingId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                         </button>
                         <button onClick={() => setDeleteTarget(s)}
                           title="Delete screening"
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors">
+                          className="p-2 rounded-xl bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
@@ -230,28 +265,32 @@ export default function DashboardPage() {
 
             <div className="space-y-3">
               <h2 className="text-sm font-bold text-gray-900 mb-4">Quick actions</h2>
-              <Link href="/screening/new"
-                className="flex items-center gap-3 p-4 rounded-2xl bg-blue-700 text-white hover:bg-blue-900 transition-colors group shadow-lg shadow-blue-200">
-                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold">New screening</p>
-                  <p className="text-xs text-blue-100">ASD, ADHD or Dyslexia</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-blue-200 group-hover:text-white transition-colors" />
-              </Link>
-              <Link href="/chat"
-                className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 hover:border-blue-100 hover:shadow-sm transition-all group bg-white">
-                <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4 text-gray-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900">AI Assistant</p>
-                  <p className="text-xs text-gray-400">Ask about development</p>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-700 transition-colors" />
-              </Link>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Link href="/screening/new"
+                  className="flex items-center gap-4 p-5 rounded-2xl bg-brand-900 text-white hover:bg-brand-800 transition-colors shadow-premium">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-white flex-shrink-0" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold">New screening</p>
+                    <p className="text-xs text-brand-100 mt-0.5">ASD, ADHD or Dyslexia</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-brand-100 group-hover:text-white transition-colors flex-shrink-0" />
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Link href="/chat"
+                  className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-gray-200 hover:border-gray-300 transition-colors shadow-sm group">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-gray-600 group-hover:text-brand-900 transition-colors flex-shrink-0" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900">AI Assistant</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Ask about development</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-brand-900 transition-colors flex-shrink-0" />
+                </Link>
+              </motion.div>
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
                 <div className="flex items-start gap-2">
                   <Clock className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
