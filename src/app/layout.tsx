@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   description: 'AI-powered screening for autism, ADHD, and dyslexia in children. Clinically validated tools for parents.',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>

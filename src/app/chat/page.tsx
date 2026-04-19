@@ -5,32 +5,22 @@ import AuthGuard from '@/components/AuthGuard';
 import Navbar from '@/components/layout/Navbar';
 import { Send, Bot, User, AlertCircle } from 'lucide-react';
 import { authFetch } from '@/lib/authFetch';
-import { motion, AnimatePresence } from 'framer-motion';
 
-interface Message {
-  id: number;
-  role: 'user' | 'assistant';
-  content: string;
-  ts: Date;
-}
+interface Message { id: number; role: 'user' | 'assistant'; content: string; ts: Date; }
 
 const SUGGESTED = [
   'What are early signs of autism?',
   'Signs of ADHD in a 6-year-old',
-  'What is dyslexia and how is it detected?',
-  'My child scored medium risk — what now?',
+  'What is dyslexia?',
+  'Medium risk — what now?',
   'How to talk to my pediatrician?',
 ];
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      role: 'assistant',
-      content: "Hi! I'm Sprout's AI assistant. I can help you understand autism, ADHD, dyslexia, developmental milestones, and guide you through your screening results. What would you like to know?",
-      ts: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{
+    id: 1, role: 'assistant', ts: new Date(),
+    content: "Hi! I'm Sprout's AI assistant. I can help you understand autism, ADHD, dyslexia, developmental milestones, and guide you through your screening results. What would you like to know?",
+  }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,178 +34,129 @@ export default function ChatPage() {
   const send = async (text: string) => {
     if (!text.trim() || loading) return;
     setError('');
-
     const userMsg: Message = { id: Date.now(), role: 'user', content: text, ts: new Date() };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-    setInput('');
-    setLoading(true);
-
+    const updated = [...messages, userMsg];
+    setMessages(updated); setInput(''); setLoading(true);
     try {
       const res = await authFetch('/api/chat', {
         method: 'POST',
-        body: JSON.stringify({
-          messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
-        }),
+        body: JSON.stringify({ messages: updated.map(m => ({ role: m.role, content: m.content })) }),
       });
-
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        if (errData.error === 'rate_limit') {
-          setError('Too many requests — please wait a few seconds and try again.');
-          return;
-        }
+        const d = await res.json().catch(() => ({}));
+        if (d.error === 'rate_limit') { setError('Too many requests — please wait a moment.'); return; }
         throw new Error('API error');
       }
-
       const data = await res.json();
-      const reply: Message = {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: data.reply,
-        ts: new Date(),
-      };
-      setMessages(prev => [...prev, reply]);
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: data.reply, ts: new Date() }]);
+    } catch { setError('Something went wrong. Please try again.'); }
+    finally { setLoading(false); }
   };
 
   return (
     <AuthGuard>
-      <div className="h-[100dvh] bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      {/* Use dvh so mobile browser chrome doesn't cause resize issues */}
+      <div className="flex flex-col bg-navy-50" style={{ height: '100dvh' }}>
         <Navbar />
 
-        <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto px-4 py-5 gap-4">
+        {/* Chat area — fills remaining space */}
+        <div className="flex-1 flex flex-col min-h-0 max-w-3xl w-full mx-auto px-4 pt-4 pb-2">
+
           {/* Chat header */}
-          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-            <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-indigo-600" />
+          <div className="flex items-center gap-3 pb-3 border-b border-navy-100 flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-sm flex-shrink-0">
+              <Bot className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">AI Assistant</p>
-              <p className="text-xs text-gray-400">Powered by Gemini · ASD, ADHD & Dyslexia guidance</p>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-navy-900">Sprout AI</p>
+              <p className="text-xs text-navy-400 truncate">ASD, ADHD & Dyslexia guidance</p>
             </div>
-            <div className="ml-auto flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-700 animate-pulse" />
-              <span className="text-xs text-gray-400">Online</span>
+            <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+              <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+              <span className="text-xs text-navy-400">Online</span>
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto space-y-4 py-2">
-            <AnimatePresence initial={false}>
-              {messages.map(msg => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-                >
-                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${
-                  msg.role === 'user' ? 'bg-gray-900' : 'bg-indigo-100'
-                }`}>
-                  {msg.role === 'user'
-                    ? <User className="w-3.5 h-3.5 text-white" />
-                    : <Bot className="w-3.5 h-3.5 text-indigo-600" />
-                  }
+          {/* Messages — scrollable */}
+          <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0">
+            {messages.map(msg => (
+              <div key={msg.id} className={`flex gap-2.5 animate-fade-up ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${msg.role === 'user' ? 'bg-navy-800' : 'bg-teal-600'}`}>
+                  {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
                 </div>
                 <div className={`max-w-[80%] flex flex-col gap-1 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-card ${
                     msg.role === 'user'
-                      ? 'bg-gray-900 text-white rounded-tr-sm'
-                      : 'bg-gray-50 border border-gray-100 text-gray-700 rounded-tl-sm'
+                      ? 'bg-navy-800 text-white rounded-tr-sm'
+                      : 'bg-white border border-navy-100 text-navy-700 rounded-tl-sm'
                   }`}>
                     {msg.content}
                   </div>
-                  <span className="text-[10px] text-gray-400 px-1 font-mono">
+                  <span className="text-[10px] text-navy-400 px-1 font-mono">
                     {msg.ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+              </div>
+            ))}
 
-            {/* Typing indicator */}
-            <AnimatePresence>
-              {loading && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex gap-2.5"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-3.5 h-3.5 text-indigo-600" />
-                  </div>
-                  <div className="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Error */}
-            {error && (
-              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {error}
+            {loading && (
+              <div className="flex gap-2.5 animate-fade-up">
+                <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+                <div className="bg-white border border-navy-100 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-card">
+                  <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
               </div>
             )}
 
+            {error && (
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
 
-          {/* Suggested prompts — only on first message */}
+          {/* Suggested prompts */}
           {messages.length <= 1 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ delay: 0.3 }}
-              className="flex flex-wrap gap-2"
-            >
+            <div className="flex flex-wrap gap-2 pb-3 flex-shrink-0">
               {SUGGESTED.map((s, i) => (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  key={i}
-                  onClick={() => send(s)}
-                  className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors bg-white"
-                >
+                <button key={i} onClick={() => send(s)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-navy-200 text-navy-500 hover:border-teal-300 hover:text-teal-700 hover:bg-teal-50 transition-colors bg-white">
                   {s}
-                </motion.button>
+                </button>
               ))}
-            </motion.div>
+            </div>
           )}
 
-          {/* Input */}
-          <div className="flex items-center gap-3 bg-gray-50 border-2 border-gray-200 rounded-2xl px-4 py-3 focus-within:border-indigo-300 focus-within:bg-white transition-all">
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
-              placeholder="Ask anything about autism, ADHD, dyslexia or development..."
-              className="flex-1 bg-transparent text-[16px] sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
-              disabled={loading}
-            />
-            <button
-              onClick={() => send(input)}
-              disabled={!input.trim() || loading}
-              className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center hover:bg-indigo-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
-            >
-              <Send className="w-3.5 h-3.5 text-white" />
-            </button>
+          {/* Input — fixed at bottom, font-size 16px prevents iOS zoom */}
+          <div className="flex-shrink-0 pb-2">
+            <div className="flex items-center gap-2 bg-white border-2 border-navy-200 rounded-2xl px-4 py-3 focus-within:border-teal-400 focus-within:shadow-glow transition-all shadow-card">
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
+                placeholder="Ask about autism, ADHD, dyslexia..."
+                style={{ fontSize: '16px' }} /* prevents iOS keyboard zoom */
+                className="flex-1 bg-transparent text-navy-900 placeholder-navy-400 focus:outline-none min-w-0"
+                disabled={loading}
+              />
+              <button
+                onClick={() => send(input)}
+                disabled={!input.trim() || loading}
+                className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center hover:bg-teal-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
+              >
+                <Send className="w-4 h-4 text-white" />
+              </button>
+            </div>
+            <p className="text-center text-[10px] text-navy-400 font-mono mt-2">
+              For educational purposes only · Not medical advice
+            </p>
           </div>
-
-          <p className="text-center text-[10px] text-gray-400 font-mono">
-            For educational purposes only · Not medical advice
-          </p>
         </div>
       </div>
     </AuthGuard>

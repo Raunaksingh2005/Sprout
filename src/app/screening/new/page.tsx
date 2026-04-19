@@ -26,9 +26,9 @@ const SCREENING_TYPES = [
     icon: Brain,
     label: 'Autism (ASD)',
     desc: 'M-CHAT-R/F · Ages 16–48 months · 20 questions',
-    color: 'border-indigo-200 bg-blue-50 text-indigo-700',
-    activeColor: 'border-indigo-600 bg-indigo-600 text-white',
-    iconColor: 'text-blue-700',
+    color: 'border-indigo-200 bg-teal-50 text-indigo-700',
+    activeColor: 'border-teal-600 bg-teal-600 text-white',
+    iconColor: 'text-teal-700',
   },
   {
     id: 'adhd' as ScreeningType,
@@ -50,7 +50,7 @@ const SCREENING_TYPES = [
   },
 ];
 
-const inputClass = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all";
+const inputClass = "w-full bg-navy-50 border border-navy-200 rounded-xl px-4 py-3 text-sm text-navy-900 placeholder-navy-400 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:bg-white transition-all";
 
 export default function NewScreeningPage() {
   const router = useRouter();
@@ -118,7 +118,7 @@ export default function NewScreeningPage() {
   };
 
   const getRiskDisplay = (r: Risk) => ({
-    Low: { style: 'text-blue-700 bg-blue-50 border-blue-100', desc: 'Few or no indicators detected. Continue monitoring development.' },
+    Low: { style: 'text-teal-700 bg-teal-50 border-teal-100', desc: 'Few or no indicators detected. Continue monitoring development.' },
     Medium: { style: 'text-amber-700 bg-amber-50 border-amber-200', desc: 'Some indicators observed. A professional evaluation is recommended.' },
     High: { style: 'text-red-700 bg-red-50 border-red-200', desc: 'Multiple indicators identified. Please consult a specialist.' },
   }[r]);
@@ -269,9 +269,9 @@ export default function NewScreeningPage() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
             >
-              <p className="text-xs font-mono text-gray-400 mb-1">screening / new</p>
-              <h1 className="text-2xl font-extrabold text-gray-900 mb-1">Choose screening type</h1>
-              <p className="text-sm text-gray-500 mb-8">Select the area you'd like to screen for.</p>
+              <p className="text-xs font-mono text-navy-400 mb-1">screening / new</p>
+              <h1 className="text-2xl font-extrabold text-navy-900 mb-1">Choose screening type</h1>
+              <p className="text-sm text-navy-500 mb-8">Select the area you'd like to screen for.</p>
 
               <div className="space-y-3 mb-8">
                 {SCREENING_TYPES.map(type => {
@@ -281,14 +281,14 @@ export default function NewScreeningPage() {
                     <button
                       key={type.id}
                       onClick={() => setScreeningType(type.id)}
-                      className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${isSelected ? type.activeColor : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                      className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${isSelected ? type.activeColor : 'border-navy-200 bg-white hover:border-navy-300'}`}
                     >
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-white/20' : 'bg-gray-100'}`}>
                         <Icon className={`w-5 h-5 ${isSelected ? 'text-white' : type.iconColor}`} />
                       </div>
                       <div>
-                        <p className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-gray-900'}`}>{type.label}</p>
-                        <p className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-gray-400'}`}>{type.desc}</p>
+                        <p className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-navy-900'}`}>{type.label}</p>
+                        <p className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-navy-400'}`}>{type.desc}</p>
                       </div>
                       {isSelected && <CheckCircle className="w-5 h-5 text-white ml-auto" />}
                     </button>
@@ -298,7 +298,7 @@ export default function NewScreeningPage() {
 
               <button
                 onClick={() => setStep('info')}
-                className="w-full flex items-center justify-center gap-2 bg-blue-700 text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 transition-colors shadow-lg shadow-blue-200 text-sm"
+                className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-200 text-sm"
               >
                 Continue <ArrowRight className="w-4 h-4" />
               </button>
@@ -314,19 +314,19 @@ export default function NewScreeningPage() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
             >
-              <button onClick={() => setStep('select')} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 mb-4 transition-colors">
+              <button onClick={() => setStep('select')} className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-navy-700 mb-4 transition-colors">
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
-              <p className="text-xs font-mono text-gray-400 mb-1">{selectedType.label} screening</p>
-              <h1 className="text-2xl font-extrabold text-gray-900 mb-1">Child information</h1>
-              <p className="text-sm text-gray-500 mb-8">We'll use this to personalise the screening.</p>
+              <p className="text-xs font-mono text-navy-400 mb-1">{selectedType.label} screening</p>
+              <h1 className="text-2xl font-extrabold text-navy-900 mb-1">Child information</h1>
+              <p className="text-sm text-navy-500 mb-8">We'll use this to personalise the screening.</p>
               <div className="space-y-5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Child's name</label>
+                  <label className="block text-xs font-bold text-navy-700 mb-1.5 uppercase tracking-wide">Child's name</label>
                   <input type="text" required value={childInfo.name} onChange={e => setChildInfo(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Emma" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Date of birth</label>
+                  <label className="block text-xs font-bold text-navy-700 mb-2 uppercase tracking-wide">Date of birth</label>
                   <div className="grid grid-cols-3 gap-2">
                     {/* Day */}
                     <select
@@ -338,7 +338,7 @@ export default function NewScreeningPage() {
                         const d = e.target.value.padStart(2, '0');
                         setChildInfo(p => ({ ...p, dob: `${y}-${mo}-${d}` }));
                       }}
-                      className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                      className="bg-navy-50 border border-navy-200 rounded-xl px-3 py-3 text-sm text-navy-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
                     >
                       <option value="">Day</option>
                       {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
@@ -355,7 +355,7 @@ export default function NewScreeningPage() {
                         const d = parts[2] || '01';
                         setChildInfo(p => ({ ...p, dob: `${y}-${mo}-${d}` }));
                       }}
-                      className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                      className="bg-navy-50 border border-navy-200 rounded-xl px-3 py-3 text-sm text-navy-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
                     >
                       <option value="">Month</option>
                       {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
@@ -371,7 +371,7 @@ export default function NewScreeningPage() {
                         const d = parts[2] || '01';
                         setChildInfo(p => ({ ...p, dob: `${e.target.value}-${mo}-${d}` }));
                       }}
-                      className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                      className="bg-navy-50 border border-navy-200 rounded-xl px-3 py-3 text-sm text-navy-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
                     >
                       <option value="">Year</option>
                       {Array.from({ length: new Date().getFullYear() - 1999 }, (_, i) => new Date().getFullYear() - i).map(y => (
@@ -384,25 +384,25 @@ export default function NewScreeningPage() {
                     const y = Math.floor(months / 12);
                     const m = months % 12;
                     const ageStr = y === 0 ? `${m} months` : m === 0 ? `${y} years` : `${y} years ${m} months`;
-                    return <p className="text-xs text-blue-600 font-semibold mt-2">Age: {ageStr}</p>;
+                    return <p className="text-xs text-teal-600 font-semibold mt-2">Age: {ageStr}</p>;
                   })()}
-                  <p className="text-xs text-gray-400 mt-1.5">
+                  <p className="text-xs text-navy-400 mt-1.5">
                     {screeningType === 'autism' ? 'M-CHAT validated for 16–48 months.' : screeningType === 'adhd' ? 'Vanderbilt validated for ages 4–12.' : 'BDA checklist validated for ages 5–12.'}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Gender</label>
+                  <label className="block text-xs font-bold text-navy-700 mb-2 uppercase tracking-wide">Gender</label>
                   <div className="flex gap-2">
                     {['Male', 'Female', 'Other'].map(g => (
                       <button key={g} type="button" onClick={() => setChildInfo(p => ({ ...p, gender: g }))}
-                        className={`flex-1 py-3 rounded-xl text-sm font-semibold border-2 transition-all ${childInfo.gender === g ? 'border-blue-700 bg-blue-700 text-white shadow-lg shadow-blue-200' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}>
+                        className={`flex-1 py-3 rounded-xl text-sm font-semibold border-2 transition-all ${childInfo.gender === g ? 'border-blue-700 bg-teal-600 text-white shadow-lg shadow-teal-200' : 'border-navy-200 bg-white text-gray-600 hover:border-navy-300'}`}>
                         {g}
                       </button>
                     ))}
                   </div>
                 </div>
                 <button onClick={() => setStep('questions')} disabled={!childInfo.name || !childInfo.dob || !childInfo.dob.split('-').every(p => p)}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-700 text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 transition-colors shadow-lg shadow-blue-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
                   Start screening <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -420,26 +420,26 @@ export default function NewScreeningPage() {
             >
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-mono font-bold text-gray-500">{currentQ + 1} / {totalQ}</p>
-                  <p className="text-xs font-mono text-gray-400">{Math.round((currentQ / totalQ) * 100)}%</p>
+                  <p className="text-xs font-mono font-bold text-navy-500">{currentQ + 1} / {totalQ}</p>
+                  <p className="text-xs font-mono text-navy-400">{Math.round((currentQ / totalQ) * 100)}%</p>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-700 rounded-full transition-all duration-500" style={{ width: `${(currentQ / totalQ) * 100}%` }} />
+                  <div className="h-full bg-teal-600 rounded-full transition-all duration-500" style={{ width: `${(currentQ / totalQ) * 100}%` }} />
                 </div>
               </div>
 
-              <span className="inline-block text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-full mb-3">
+              <span className="inline-block text-xs font-bold text-teal-600 uppercase tracking-widest bg-teal-50 px-2.5 py-1 rounded-full mb-3">
                 {questions[currentQ].category.replace(/_/g, ' ')}
               </span>
-              <h2 className="text-xl font-bold text-gray-900 mt-2 mb-2 leading-relaxed">
+              <h2 className="text-xl font-bold text-navy-900 mt-2 mb-2 leading-relaxed">
                 {questions[currentQ].text}
               </h2>
-              <p className="text-xs text-gray-400 mb-8">Select the option that best describes your child's behaviour.</p>
+              <p className="text-xs text-navy-400 mb-8">Select the option that best describes your child's behaviour.</p>
 
               {saving ? (
                 <div className="flex flex-col items-center py-12 gap-3">
-                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                  <p className="text-sm text-gray-500">Saving your results...</p>
+                  <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+                  <p className="text-sm text-navy-500">Saving your results...</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -453,17 +453,17 @@ export default function NewScreeningPage() {
                       <button key={opt.value} onClick={() => handleAnswer(opt.value)}
                         className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-sm font-semibold transition-all group ${
                           isSelected 
-                            ? 'border-blue-600 bg-blue-50 text-blue-800 shadow-md transform scale-[1.02]' 
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50'
+                            ? 'border-blue-600 bg-teal-50 text-blue-800 shadow-md transform scale-[1.02]' 
+                            : 'border-navy-200 bg-white text-navy-700 hover:border-blue-300 hover:bg-navy-50'
                         }`}>
                         <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 transition-transform ${isSelected ? 'scale-110 ' : ''} ${iconBgs[idx]} ${iconColors[idx]}`}>
                           {icons[idx]}
                         </span>
                         <span className="flex-1 text-left">{opt.label}</span>
                         {isSelected ? (
-                          <CheckCircle className="w-5 h-5 text-blue-600" />
+                          <CheckCircle className="w-5 h-5 text-teal-600" />
                         ) : (
-                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-teal-400 transition-colors" />
                         )}
                       </button>
                     );
@@ -472,7 +472,7 @@ export default function NewScreeningPage() {
               )}
 
               {currentQ > 0 && !saving && (
-                <button onClick={() => setCurrentQ(p => p - 1)} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-900 transition-colors mt-6">
+                <button onClick={() => setCurrentQ(p => p - 1)} className="flex items-center gap-2 text-sm text-navy-400 hover:text-navy-900 transition-colors mt-6">
                   <ArrowLeft className="w-4 h-4" /> Previous
                 </button>
               )}
@@ -488,11 +488,11 @@ export default function NewScreeningPage() {
               transition={{ duration: 0.4 }}
             >
               <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-blue-700" />
+                <div className="w-16 h-16 rounded-2xl bg-teal-100 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-teal-700" />
                 </div>
-                <h1 className="text-2xl font-extrabold text-gray-900 mb-1">Screening complete</h1>
-                <p className="text-sm text-gray-500">
+                <h1 className="text-2xl font-extrabold text-navy-900 mb-1">Screening complete</h1>
+                <p className="text-sm text-navy-500">
                   <span className="font-semibold">{selectedType.label}</span> results for <strong>{childInfo.name}</strong>
                 </p>
               </div>
@@ -506,43 +506,43 @@ export default function NewScreeningPage() {
               </div>
 
               {/* AI Summary */}
-              <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+              <div className="mb-5 rounded-2xl border border-teal-100 bg-teal-50 p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-blue-700" />
-                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">AI-Generated Summary</p>
+                  <Sparkles className="w-4 h-4 text-teal-700" />
+                  <p className="text-xs font-bold text-teal-700 uppercase tracking-wide">AI-Generated Summary</p>
                 </div>
                 {summaryLoading ? (
                   <div className="flex items-center gap-3">
-                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
+                    <Loader2 className="w-4 h-4 text-teal-500 animate-spin flex-shrink-0" />
                     <div>
-                      <p className="text-sm text-blue-700 font-semibold">Generating personalised summary...</p>
-                      <p className="text-xs text-blue-400 mt-0.5">Our AI is analysing your responses</p>
+                      <p className="text-sm text-teal-700 font-semibold">Generating personalised summary...</p>
+                      <p className="text-xs text-teal-400 mt-0.5">Our AI is analysing your responses</p>
                     </div>
                   </div>
                 ) : aiSummary ? (
                   <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
                 ) : (
-                  <p className="text-sm text-blue-400 italic">Summary unavailable.</p>
+                  <p className="text-sm text-teal-400 italic">Summary unavailable.</p>
                 )}
               </div>
 
               <button onClick={handleDownload} disabled={downloading || summaryLoading}
-                className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white font-bold py-3.5 rounded-xl hover:bg-gray-700 transition-colors text-sm mb-3 disabled:opacity-50">
+                className="w-full flex items-center justify-center gap-2 bg-navy-900 text-white font-bold py-3.5 rounded-xl hover:bg-navy-700 transition-colors text-sm mb-3 disabled:opacity-50">
                 {downloading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating PDF...</> : <><Download className="w-4 h-4" /> Download Full Report (PDF)</>}
               </button>
 
               <div className="flex gap-3">
                 <button onClick={() => router.push('/dashboard')}
-                  className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-700 hover:text-gray-900 hover:border-gray-300 transition-colors text-sm font-semibold">
+                  className="flex-1 py-3 rounded-xl border-2 border-navy-200 text-navy-700 hover:text-navy-900 hover:border-navy-300 transition-colors text-sm font-semibold">
                   Dashboard
                 </button>
                 <button onClick={() => router.push('/chat')}
-                  className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors text-sm shadow-lg shadow-blue-200">
+                  className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors text-sm shadow-lg shadow-teal-200">
                   Ask AI assistant
                 </button>
               </div>
 
-              <p className="text-xs text-gray-400 text-center mt-6 leading-relaxed">
+              <p className="text-xs text-navy-400 text-center mt-6 leading-relaxed">
                 Screening tool only · Not a medical diagnosis<br />
                 Please consult a qualified healthcare professional.
               </p>
