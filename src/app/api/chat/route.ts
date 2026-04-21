@@ -1,6 +1,13 @@
 import { NextRequest } from 'next/server';
 import { callAI } from '@/lib/ai';
-import { requireAuth } from '@/lib/apiAuth';
+import { requireAuth, corsHeaders } from '@/lib/apiAuth';
+
+// Vercel function timeout
+export const maxDuration = 30;
+
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
+}
 
 const SYSTEM_PROMPT = `You are Sprout's AI assistant — a knowledgeable, compassionate guide for parents concerned about their child's development.
 

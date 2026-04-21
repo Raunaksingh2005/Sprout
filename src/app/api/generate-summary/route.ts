@@ -1,6 +1,12 @@
 import { NextRequest } from 'next/server';
 import { callAI } from '@/lib/ai';
-import { requireAuth } from '@/lib/apiAuth';
+import { requireAuth, corsHeaders } from '@/lib/apiAuth';
+
+export const maxDuration = 30;
+
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
+}
 
 export async function POST(req: NextRequest) {
   // Auth + rate limit check
