@@ -4,9 +4,30 @@ import Link from 'next/link';
 import { ArrowRight, Brain, Zap, BookOpen, MessageSquare, ClipboardList, Shield, CheckCircle, Clock, Sprout, ChevronRight } from 'lucide-react';
 
 const screenings = [
-  { icon: Brain,    label: 'Autism (ASD)', age: '16–48 months', questions: 20, tool: 'M-CHAT-R/F',      ring: 'ring-indigo-200', bg: 'bg-indigo-50', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', tag: 'bg-indigo-100 text-indigo-700' },
-  { icon: Zap,      label: 'ADHD',         age: '4–12 years',   questions: 18, tool: 'Vanderbilt Scale', ring: 'ring-pink-200',   bg: 'bg-pink-50',   iconBg: 'bg-pink-100',   iconColor: 'text-pink-600',   tag: 'bg-pink-100 text-pink-700' },
-  { icon: BookOpen, label: 'Dyslexia',     age: '5–12 years',   questions: 15, tool: 'BDA Checklist',   ring: 'ring-amber-200',  bg: 'bg-amber-50',  iconBg: 'bg-amber-100',  iconColor: 'text-amber-600',  tag: 'bg-amber-100 text-amber-700' },
+  {
+    icon: Brain,
+    label: 'Autism (ASD)',
+    age: '16 months+',
+    tool: 'M-CHAT-R/F · CAST · AQ-10',
+    desc: 'Auto-selects the right tool based on your child\'s age',
+    ring: 'ring-indigo-200', bg: 'bg-indigo-50', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', tag: 'bg-indigo-100 text-indigo-700',
+  },
+  {
+    icon: Zap,
+    label: 'ADHD',
+    age: '4 years+',
+    tool: 'Vanderbilt · ASRS',
+    desc: 'Vanderbilt for children, ASRS for teens and adults',
+    ring: 'ring-pink-200', bg: 'bg-pink-50', iconBg: 'bg-pink-100', iconColor: 'text-pink-600', tag: 'bg-pink-100 text-pink-700',
+  },
+  {
+    icon: BookOpen,
+    label: 'Dyslexia',
+    age: '5–12 years',
+    tool: 'BDA Checklist',
+    desc: 'British Dyslexia Association validated checklist',
+    ring: 'ring-amber-200', bg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', tag: 'bg-amber-100 text-amber-700',
+  },
 ];
 
 const steps = [
@@ -18,7 +39,7 @@ const steps = [
 
 const faqs = [
   { q: 'Is Sprout a medical diagnosis?',          a: 'No. Sprout is a screening tool only. Always consult a qualified healthcare professional for a diagnosis.' },
-  { q: 'What age ranges are supported?',          a: 'Autism (M-CHAT-R/F): 16–48 months. ADHD & Dyslexia: 4–12 years.' },
+  { q: 'What age ranges are supported?', a: 'Autism: 16 months+ (M-CHAT-R/F for under 4, CAST for 4–11, AQ-10 for 12+). ADHD: 4+ years (Vanderbilt for 4–12, ASRS for 12+). Dyslexia: 5–12 years.' },
   { q: 'Is my data private?',                     a: 'Yes. All data is encrypted and stored securely via Firebase. We never sell or share your information.' },
   { q: 'Can I screen for multiple conditions?',   a: 'Yes — run separate screenings for each condition. Each generates its own AI-powered report.' },
   { q: 'What if my child scores high risk?',      a: 'We guide you on next steps and our AI assistant can help you prepare for a conversation with your doctor.' },
@@ -98,13 +119,14 @@ export default function LandingPage() {
           <p className="text-navy-500 max-w-xl">Each uses a clinically validated tool, takes under 10 minutes, and generates an AI-powered report with personalised next steps.</p>
         </div>
         <div className="grid sm:grid-cols-3 gap-5">
-          {screenings.map(({ icon: Icon, label, age, questions, tool, bg, iconBg, iconColor, tag, ring }) => (
+          {screenings.map(({ icon: Icon, label, age, tool, desc, bg, iconBg, iconColor, tag, ring }) => (
             <div key={label} className={`p-6 rounded-3xl border-2 ${bg} ring-1 ${ring} hover:shadow-card transition-all hover-lift`}>
               <div className={`w-11 h-11 rounded-2xl ${iconBg} flex items-center justify-center mb-5`}>
                 <Icon className={`w-5 h-5 ${iconColor}`} />
               </div>
               <h3 className="font-extrabold text-navy-900 text-lg mb-1">{label}</h3>
-              <p className="text-xs text-navy-400 mb-4">{age} · {questions} questions</p>
+              <p className="text-xs text-navy-400 mb-1">{age}</p>
+              <p className="text-xs text-navy-500 mb-4 leading-relaxed">{desc}</p>
               <span className={`text-xs font-bold px-3 py-1 rounded-full ${tag}`}>{tool}</span>
             </div>
           ))}
@@ -130,9 +152,9 @@ export default function LandingPage() {
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { icon: ClipboardList, label: 'Validated tools',  desc: 'M-CHAT-R/F, Vanderbilt, BDA Checklist', bg: 'bg-teal-600' },
+              { icon: ClipboardList, label: 'Validated tools',  desc: 'M-CHAT-R/F, CAST, AQ-10, Vanderbilt, ASRS, BDA', bg: 'bg-teal-600' },
               { icon: MessageSquare, label: 'AI assistant',     desc: 'Ask follow-up questions about any result', bg: 'bg-indigo-600' },
-              { icon: Shield,        label: 'Private & secure', desc: 'Firebase-backed, encrypted, never shared', bg: 'bg-pink-600' },
+              { icon: Shield,        label: 'Private & secure', desc: 'Encrypted, never shared', bg: 'bg-pink-600' },
             ].map(({ icon: Icon, label, desc, bg }) => (
               <div key={label} className="bg-navy-800/40 border border-navy-700 rounded-3xl p-6">
                 <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-4`}>

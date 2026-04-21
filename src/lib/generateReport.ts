@@ -1,6 +1,9 @@
 import jsPDF from 'jspdf';
 import { MCHAT_QUESTIONS } from '@/data/mchat-questions';
+import { CAST_QUESTIONS } from '@/data/cast-questions';
+import { AQ10_QUESTIONS, scoreAQ10Answer } from '@/data/aq10-questions';
 import { ADHD_QUESTIONS } from '@/data/adhd-questions';
+import { ASRS_QUESTIONS } from '@/data/asrs-questions';
 import { DYSLEXIA_QUESTIONS } from '@/data/dyslexia-questions';
 
 export interface ReportData {
@@ -71,9 +74,8 @@ const RISK_BORDER: Record<string, [number,number,number]> = {
   Low: [167, 243, 208], Medium: [253, 230, 138], High: [254, 202, 202],
 };
 
-// Per-screening-type category config
 const CATEGORY_CONFIG: Record<string, { key: string; label: string; color: [number,number,number] }[]> = {
-  autism: [
+  autism_mchat: [
     { key: 'joint_attention', label: 'Joint Attention', color: [99, 102, 241] },
     { key: 'social_communication', label: 'Social Communication', color: [236, 72, 153] },
     { key: 'behavior', label: 'Repetitive Behaviors', color: [245, 158, 11] },
@@ -81,10 +83,29 @@ const CATEGORY_CONFIG: Record<string, { key: string; label: string; color: [numb
     { key: 'language', label: 'Language Development', color: [59, 130, 246] },
     { key: 'motor', label: 'Motor Skills', color: [16, 185, 129] },
   ],
-  adhd: [
+  autism_cast: [
+    { key: 'social', label: 'Social Interaction', color: [99, 102, 241] },
+    { key: 'communication', label: 'Communication', color: [236, 72, 153] },
+    { key: 'imagination', label: 'Imagination', color: [245, 158, 11] },
+    { key: 'play', label: 'Play', color: [20, 184, 166] },
+    { key: 'behavior', label: 'Repetitive Behaviors', color: [59, 130, 246] },
+    { key: 'sensory', label: 'Sensory', color: [16, 185, 129] },
+  ],
+  autism_aq10: [
+    { key: 'social', label: 'Social Interaction', color: [99, 102, 241] },
+    { key: 'attention', label: 'Attention to Detail', color: [236, 72, 153] },
+    { key: 'flexibility', label: 'Flexibility', color: [245, 158, 11] },
+    { key: 'imagination', label: 'Imagination', color: [20, 184, 166] },
+    { key: 'behavior', label: 'Behavior Patterns', color: [59, 130, 246] },
+  ],
+  adhd_vanderbilt: [
     { key: 'inattention', label: 'Inattention', color: [99, 102, 241] },
     { key: 'hyperactivity', label: 'Hyperactivity', color: [236, 72, 153] },
     { key: 'impulsivity', label: 'Impulsivity', color: [245, 158, 11] },
+  ],
+  adhd_asrs: [
+    { key: 'inattention', label: 'Inattention', color: [99, 102, 241] },
+    { key: 'hyperactivity', label: 'Hyperactivity', color: [236, 72, 153] },
   ],
   dyslexia: [
     { key: 'phonological', label: 'Phonological Awareness', color: [99, 102, 241] },
@@ -144,15 +165,40 @@ export function generatePDF(data: ReportData): void {
   const sType = data.screeningType ?? 'autism';
   const SCREENING_NAME = { autism: 'Autism (ASD)', adhd: 'ADHD', dyslexia: 'Dyslexia' }[sType];
 
-  // Pick the right question set
-  const questions = sType === 'adhd' ? ADHD_QUESTIONS : sType === 'dyslexia' ? DYSLEXIA_QUESTIONS : MCHAT_QUESTIONS;
+  // Pick the right question set based on type AND age
+  const getQuestions = () => {
+    if (sType === 'adhd') {
+      // ASRS for 12+ (144 months), Vanderbilt for younger
+      return data.childAge >= 144 ? ASRS_QUESTIONS : ADHD_QUESTIONS;
+    }
+    if (sType === 'dyslexia') return DYSLEXIA_QUESTIONS;
+    // Autism: auto-select by age
+    if (data.childAge < 48) return MCHAT_QUESTIONS;
+    if (data.childAge < 144) return CAST_QUESTIONS;
+    return AQ10_QUESTIONS;
+  };
+  const questions = getQuestions();
+
+  // Tool name for report header
+  const getToolName = () => {
+    if (sType === 'adhd') return data.childAge >= 144 ? 'ASRS-v1.1' : 'Vanderbilt Scale';
+    if (sType === 'dyslexia') return 'BDA Checklist';
+    if (data.childAge < 48) return 'M-CHAT-R/F';
+    if (data.childAge < 144) return 'CAST';
+    return 'AQ-10';
+  };
+  const toolName = getToolName();
 
   // Build concern map
   const concernMap: Record<number, boolean> = {};
   questions.forEach(q => {
     const ans = data.answers[q.id] ?? '';
     if (sType === 'autism') {
-      concernMap[q.id] = isConcernAutism(ans, (q as any).expected);
+      if (questions === AQ10_QUESTIONS) {
+        concernMap[q.id] = scoreAQ10Answer(q.id, ans) === 1;
+      } else {
+        concernMap[q.id] = isConcernAutism(ans, (q as any).expected);
+      }
     } else {
       const val = parseInt(ans || '0');
       concernMap[q.id] = val >= (q as any).threshold;
@@ -173,7 +219,14 @@ export function generatePDF(data: ReportData): void {
   const concerns = questions.filter(q => concernMap[q.id])
     .map(q => (q as any).observation?.fail ?? (q as any).observation?.concern ?? (q as any).shortLabel ?? q.text);
   const topConcerns = questions.filter(q => concernMap[q.id]).slice(0, 3);
-  const categories = CATEGORY_CONFIG[sType] ?? CATEGORY_CONFIG.autism;
+  const getCategoryKey = () => {
+    if (sType === 'dyslexia') return 'dyslexia';
+    if (sType === 'adhd') return data.childAge >= 144 ? 'adhd_asrs' : 'adhd_vanderbilt';
+    if (data.childAge < 48) return 'autism_mchat';
+    if (data.childAge < 144) return 'autism_cast';
+    return 'autism_aq10';
+  };
+  const categories = CATEGORY_CONFIG[getCategoryKey()] ?? CATEGORY_CONFIG.autism_mchat;
   const steps = NEXT_STEPS[sType]?.[data.risk] ?? NEXT_STEPS.autism[data.risk];
   const summaryText = data.aiSummary || PLAIN_SUMMARY[sType]?.[data.risk] || PLAIN_SUMMARY.autism[data.risk];
 
@@ -189,7 +242,7 @@ export function generatePDF(data: ReportData): void {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(...BLUE_200);
-  doc.text(`${SCREENING_NAME} Screening Summary`, W / 2, 20, { align: 'center' });
+  doc.text(`${SCREENING_NAME} Screening — ${toolName}`, W / 2, 20, { align: 'center' });
   doc.setFontSize(7);
   doc.text(`Report ID: ${reportId}`, W / 2, 27, { align: 'center' });
 

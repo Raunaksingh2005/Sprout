@@ -1,31 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import Navbar from '@/components/layout/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { MCHAT_QUESTIONS } from '@/data/mchat-questions';
+import { CAST_QUESTIONS } from '@/data/cast-questions';
+import { AQ10_QUESTIONS, scoreAQ10Answer } from '@/data/aq10-questions';
 import { ADHD_QUESTIONS } from '@/data/adhd-questions';
+import { ASRS_QUESTIONS } from '@/data/asrs-questions';
 import { DYSLEXIA_QUESTIONS } from '@/data/dyslexia-questions';
 import { saveScreening, updateScreeningSummary } from '@/lib/firebase/screenings';
 import { generatePDF } from '@/lib/generateReport';
 import { authFetch } from '@/lib/authFetch';
 import { dobToMonths } from '@/lib/firebase/screenings';
 import { invalidateCache } from '@/lib/screeningCache';
-import { ArrowLeft, ArrowRight, CheckCircle, Loader2, Download, Sparkles, Brain, Zap, BookOpen } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Loader2, Download, Sparkles, Brain, Zap, BookOpen, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Step = 'select' | 'info' | 'questions' | 'result';
 type Risk = 'Low' | 'Medium' | 'High';
 type ScreeningType = 'autism' | 'adhd' | 'dyslexia';
 
+// Auto-select the right tool based on age in months
+function getAutismTool(ageMonths: number): 'mchat' | 'cast' | 'aq10' {
+  if (ageMonths < 48) return 'mchat';
+  if (ageMonths < 144) return 'cast';
+  return 'aq10';
+}
+
+function getAutismToolLabel(tool: 'mchat' | 'cast' | 'aq10'): string {
+  return { mchat: 'M-CHAT-R/F', cast: 'CAST', aq10: 'AQ-10' }[tool];
+}
+
+function getAdhdTool(ageMonths: number): 'vanderbilt' | 'asrs' {
+  return ageMonths < 144 ? 'vanderbilt' : 'asrs'; // < 12y → Vanderbilt, 12y+ → ASRS
+}
+
+function getAdhdToolLabel(tool: 'vanderbilt' | 'asrs'): string {
+  return { vanderbilt: 'Vanderbilt Scale', asrs: 'ASRS-v1.1' }[tool];
+}
+
 const SCREENING_TYPES = [
   {
     id: 'autism' as ScreeningType,
     icon: Brain,
     label: 'Autism (ASD)',
-    desc: 'M-CHAT-R/F · Ages 16–48 months · 20 questions',
+    desc: 'Auto-selects tool by age · M-CHAT / CAST / AQ-10',
     color: 'border-indigo-200 bg-teal-50 text-indigo-700',
     activeColor: 'border-teal-600 bg-teal-600 text-white',
     iconColor: 'text-teal-700',
@@ -34,7 +56,7 @@ const SCREENING_TYPES = [
     id: 'adhd' as ScreeningType,
     icon: Zap,
     label: 'ADHD',
-    desc: 'Vanderbilt Scale · Ages 4–12 years · 18 questions',
+    desc: 'Auto-selects tool by age · Vanderbilt (4–12y) · ASRS (12y+)',
     color: 'border-pink-200 bg-pink-50 text-pink-700',
     activeColor: 'border-pink-600 bg-pink-600 text-white',
     iconColor: 'text-pink-600',
@@ -62,59 +84,74 @@ export default function NewScreeningPage() {
   const [currentQ, setCurrentQ] = useState(0);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [savedId, setSavedId] = useState<string | null>(null); // track saved screening ID
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
 
-  const questions = screeningType === 'autism' ? MCHAT_QUESTIONS
-    : screeningType === 'adhd' ? ADHD_QUESTIONS
-    : DYSLEXIA_QUESTIONS;
+  // Derive the autism tool and ADHD tool from the child's age
+  const ageMonths = childInfo.dob && childInfo.dob.split('-').every(p => p) ? dobToMonths(childInfo.dob) : 0;
+  const autismTool = getAutismTool(ageMonths);
+  const adhdTool = getAdhdTool(ageMonths);
+
+  // Pick the right question set
+  const questions = useMemo(() => {
+    if (screeningType === 'autism') {
+      if (autismTool === 'mchat') return MCHAT_QUESTIONS;
+      if (autismTool === 'cast')  return CAST_QUESTIONS;
+      return AQ10_QUESTIONS;
+    }
+    if (screeningType === 'adhd') {
+      return adhdTool === 'vanderbilt' ? ADHD_QUESTIONS : ASRS_QUESTIONS;
+    }
+    return DYSLEXIA_QUESTIONS;
+  }, [screeningType, autismTool, adhdTool]);
 
   const totalQ = questions.length;
 
   // ── Scoring ──────────────────────────────────────────────────────────────
   const calcScore = (ans: Record<number, string>): number => {
     if (screeningType === 'autism') {
+      if (autismTool === 'mchat') {
+        let s = 0;
+        MCHAT_QUESTIONS.forEach(q => { const a = ans[q.id]; if (a && a !== q.expected && a !== 'sometimes') s++; });
+        return s;
+      }
+      if (autismTool === 'cast') {
+        let s = 0;
+        CAST_QUESTIONS.forEach(q => { const a = ans[q.id]; if (a && a !== q.expected) s++; });
+        return s;
+      }
+      // AQ-10
       let s = 0;
-      MCHAT_QUESTIONS.forEach(q => {
-        const a = ans[q.id];
-        if (a && a !== q.expected && a !== 'sometimes') s++;
-      });
+      AQ10_QUESTIONS.forEach(q => { s += scoreAQ10Answer(q.id, ans[q.id] ?? ''); });
       return s;
     }
     if (screeningType === 'adhd') {
+      const qs = adhdTool === 'vanderbilt' ? ADHD_QUESTIONS : ASRS_QUESTIONS;
       let s = 0;
-      ADHD_QUESTIONS.forEach(q => {
-        const val = parseInt(ans[q.id] ?? '0');
-        if (val >= q.threshold) s++;
-      });
+      qs.forEach(q => { const val = parseInt(ans[q.id] ?? '0'); if (val >= q.threshold) s++; });
       return s;
     }
-    // dyslexia
     let s = 0;
-    DYSLEXIA_QUESTIONS.forEach(q => {
-      const val = parseInt(ans[q.id] ?? '0');
-      if (val >= q.threshold) s++;
-    });
+    DYSLEXIA_QUESTIONS.forEach(q => { const val = parseInt(ans[q.id] ?? '0'); if (val >= q.threshold) s++; });
     return s;
   };
 
   const getRisk = (score: number): Risk => {
     if (screeningType === 'autism') {
-      if (score <= 2) return 'Low';
-      if (score <= 7) return 'Medium';
-      return 'High';
+      if (autismTool === 'mchat') { return score <= 2 ? 'Low' : score <= 7 ? 'Medium' : 'High'; }
+      if (autismTool === 'cast')  { return score < 10 ? 'Low' : score < 15 ? 'Medium' : 'High'; }
+      // AQ-10: ≥6 = refer
+      return score < 4 ? 'Low' : score < 6 ? 'Medium' : 'High';
     }
     if (screeningType === 'adhd') {
-      // 18 questions, concern if 6+ symptoms
-      if (score <= 3) return 'Low';
-      if (score <= 8) return 'Medium';
-      return 'High';
+      if (adhdTool === 'asrs') {
+        // ASRS Part A: ≥4 out of 6 = refer
+        return score < 3 ? 'Low' : score < 4 ? 'Medium' : 'High';
+      }
+      return score <= 3 ? 'Low' : score <= 8 ? 'Medium' : 'High';
     }
-    // dyslexia — 15 questions
-    if (score <= 3) return 'Low';
-    if (score <= 7) return 'Medium';
-    return 'High';
+    return score <= 3 ? 'Low' : score <= 7 ? 'Medium' : 'High';
   };
 
   const getRiskDisplay = (r: Risk) => ({
@@ -125,7 +162,9 @@ export default function NewScreeningPage() {
 
   const getAnswerLabel = (qId: number, value: string): string => {
     const q = questions.find(q => q.id === qId);
-    return q?.options.find(o => o.value === value)?.label ?? value;
+    const opts = (q as any)?.options;
+    if (opts) return opts.find((o: any) => o.value === value)?.label ?? value;
+    return value.charAt(0).toUpperCase() + value.slice(1);
   };
 
   // ── AI Summary ────────────────────────────────────────────────────────────
@@ -384,10 +423,63 @@ export default function NewScreeningPage() {
                     const y = Math.floor(months / 12);
                     const m = months % 12;
                     const ageStr = y === 0 ? `${m} months` : m === 0 ? `${y} years` : `${y} years ${m} months`;
-                    return <p className="text-xs text-teal-600 font-semibold mt-2">Age: {ageStr}</p>;
+
+                    // For autism or ADHD, show which tool will be used
+                    const toolInfo = (() => {
+                      if (screeningType === 'autism') {
+                        const tool = getAutismTool(months);
+                        const toolLabel = getAutismToolLabel(tool);
+                        const toolDesc = { mchat: '20 questions · Ages 16m–4y', cast: '37 questions · Ages 4–11y', aq10: '10 questions · Ages 12+' }[tool];
+                        return { toolLabel, toolDesc };
+                      }
+                      if (screeningType === 'adhd') {
+                        const tool = getAdhdTool(months);
+                        const toolLabel = getAdhdToolLabel(tool);
+                        const toolDesc = { vanderbilt: '18 questions · Ages 4–12', asrs: '6 questions · Ages 12+' }[tool];
+                        return { toolLabel, toolDesc };
+                      }
+                      return null;
+                    })();
+
+                    // Validate age range per screening type
+                    const ranges: Record<string, { min: number; max: number; label: string }> = {
+                      autism:   { min: 16,  max: 600, label: '16 months and above' },
+                      adhd:     { min: 48,  max: 600, label: '4 years and above' },
+                      dyslexia: { min: 60,  max: 144, label: '5–12 years' },
+                    };
+                    const range = ranges[screeningType];
+                    const inRange = months >= range.min && months <= range.max;
+
+                    return (
+                      <div className="mt-2 space-y-2">
+                        <p className={`text-xs font-semibold ${inRange ? 'text-teal-600' : 'text-red-600'}`}>
+                          Age: {ageStr}
+                        </p>
+                        {toolInfo && inRange && (
+                          <div className="flex items-start gap-2 p-3 rounded-xl bg-teal-50 border border-teal-200">
+                            <Info className="w-3.5 h-3.5 text-teal-600 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-teal-700 font-medium">
+                              We'll use the <strong>{toolInfo.toolLabel}</strong> — {toolInfo.toolDesc}
+                            </p>
+                          </div>
+                        )}
+                        {!inRange && (
+                          <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200">
+                            <span className="text-red-500 text-sm flex-shrink-0">⚠️</span>
+                            <p className="text-xs text-red-700 font-medium leading-relaxed">
+                              The {screeningType === 'adhd' ? 'Vanderbilt' : 'BDA'} screening is validated for children aged <strong>{range.label}</strong>. Results outside this range may not be accurate.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
                   })()}
                   <p className="text-xs text-navy-400 mt-1.5">
-                    {screeningType === 'autism' ? 'M-CHAT validated for 16–48 months.' : screeningType === 'adhd' ? 'Vanderbilt validated for ages 4–12.' : 'BDA checklist validated for ages 5–12.'}
+                    {screeningType === 'autism'
+                      ? 'Tool auto-selected based on age: M-CHAT (16m–4y) · CAST (4–11y) · AQ-10 (12y+)'
+                      : screeningType === 'adhd'
+                      ? 'Tool auto-selected based on age: Vanderbilt (4–12y) · ASRS (12y+)'
+                      : 'BDA checklist validated for ages 5–12.'}
                   </p>
                 </div>
                 <div>
@@ -401,7 +493,15 @@ export default function NewScreeningPage() {
                     ))}
                   </div>
                 </div>
-                <button onClick={() => setStep('questions')} disabled={!childInfo.name || !childInfo.dob || !childInfo.dob.split('-').every(p => p)}
+                <button onClick={() => setStep('questions')} disabled={!childInfo.name || !childInfo.dob || !childInfo.dob.split('-').every(p => p) || (() => {
+                    if (!childInfo.dob || !childInfo.dob.split('-').every(p => p)) return true;
+                    const months = dobToMonths(childInfo.dob);
+                    const ranges: Record<string, { min: number; max: number }> = {
+                      autism: { min: 16, max: 600 }, adhd: { min: 48, max: 600 }, dyslexia: { min: 60, max: 144 },
+                    };
+                    const r = ranges[screeningType];
+                    return months < r.min || months > r.max;
+                  })()}
                   className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
                   Start screening <ArrowRight className="w-4 h-4" />
                 </button>
@@ -443,31 +543,41 @@ export default function NewScreeningPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {questions[currentQ].options.map((opt, oi) => {
+                  {(() => {
+                    const q = questions[currentQ];
+                    // Questions with explicit options (ADHD, Dyslexia, AQ-10)
+                    const opts = (q as any).options as { label: string; value: string }[] | undefined;
+                    // Questions with expected yes/no (M-CHAT, CAST)
+                    const yesNoOpts = opts ?? [
+                      { label: 'Yes', value: 'yes' },
+                      { label: 'Sometimes', value: 'sometimes' },
+                      { label: 'No', value: 'no' },
+                    ];
                     const icons = ['✓', '~', '✗'];
                     const iconColors = ['text-emerald-600', 'text-amber-500', 'text-red-500'];
                     const iconBgs = ['bg-emerald-50', 'bg-amber-50', 'bg-red-50'];
-                    const idx = Math.min(oi, 2);
-                    const isSelected = answers[questions[currentQ].id] === opt.value;
-                    return (
-                      <button key={opt.value} onClick={() => handleAnswer(opt.value)}
-                        className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-sm font-semibold transition-all group ${
-                          isSelected 
-                            ? 'border-blue-600 bg-teal-50 text-blue-800 shadow-md transform scale-[1.02]' 
-                            : 'border-navy-200 bg-white text-navy-700 hover:border-blue-300 hover:bg-navy-50'
-                        }`}>
-                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 transition-transform ${isSelected ? 'scale-110 ' : ''} ${iconBgs[idx]} ${iconColors[idx]}`}>
-                          {icons[idx]}
-                        </span>
-                        <span className="flex-1 text-left">{opt.label}</span>
-                        {isSelected ? (
-                          <CheckCircle className="w-5 h-5 text-teal-600" />
-                        ) : (
-                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-teal-400 transition-colors" />
-                        )}
-                      </button>
-                    );
-                  })}
+                    return yesNoOpts.map((opt, oi) => {
+                      const idx = Math.min(oi, 2);
+                      const isSelected = answers[q.id] === opt.value;
+                      return (
+                        <button key={opt.value} onClick={() => handleAnswer(opt.value)}
+                          className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-sm font-semibold transition-all group ${
+                            isSelected
+                              ? 'border-teal-500 bg-teal-50 text-teal-800 shadow-md'
+                              : 'border-navy-200 bg-white text-navy-700 hover:border-teal-300 hover:bg-navy-50'
+                          }`}>
+                          <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${iconBgs[idx]} ${iconColors[idx]}`}>
+                            {icons[idx]}
+                          </span>
+                          <span className="flex-1 text-left">{opt.label}</span>
+                          {isSelected
+                            ? <CheckCircle className="w-5 h-5 text-teal-600" />
+                            : <ArrowRight className="w-4 h-4 text-navy-300 group-hover:text-teal-400 transition-colors" />
+                          }
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               )}
 
