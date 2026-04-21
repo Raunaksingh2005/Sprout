@@ -493,18 +493,24 @@ export default function NewScreeningPage() {
                     ))}
                   </div>
                 </div>
-                <button onClick={() => setStep('questions')} disabled={!childInfo.name || !childInfo.dob || !childInfo.dob.split('-').every(p => p) || (() => {
-                    if (!childInfo.dob || !childInfo.dob.split('-').every(p => p)) return true;
-                    const months = dobToMonths(childInfo.dob);
+                {(() => {
+                    const dobComplete = childInfo.dob && childInfo.dob.split('-').every(p => p);
+                    const months = dobComplete ? dobToMonths(childInfo.dob) : 0;
                     const ranges: Record<string, { min: number; max: number }> = {
                       autism: { min: 16, max: 600 }, adhd: { min: 48, max: 600 }, dyslexia: { min: 60, max: 144 },
                     };
                     const r = ranges[screeningType];
-                    return months < r.min || months > r.max;
+                    const ageInvalid = !dobComplete || months < r.min || months > r.max;
+                    const disabled = !childInfo.name || !dobComplete || ageInvalid;
+                    return (
+                      <button
+                        onClick={() => setStep('questions')}
+                        disabled={disabled}
+                        className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                        Start screening <ArrowRight className="w-4 h-4" />
+                      </button>
+                    );
                   })()}
-                  className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
-                  Start screening <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
             </motion.div>
           )}
